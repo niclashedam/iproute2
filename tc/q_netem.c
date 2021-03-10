@@ -32,6 +32,7 @@ static void explain(void)
 	fprintf(stderr,
 		"Usage: ... netem	[ limit PACKETS ]\n" \
 		"			[ delay TIME [ JITTER [CORRELATION]]]\n" \
+		"			[ bursting TIME]\n" \
 		"			[ distribution {uniform|normal|pareto|paretonormal} ]\n" \
 		"			[ corrupt PERCENT [CORRELATION]]\n" \
 		"			[ duplicate PERCENT [CORRELATION]]\n" \
@@ -218,6 +219,12 @@ static int netem_parse_opt(struct qdisc_util *qu, int argc, char **argv,
 			NEXT_ARG();
 			if (get_size(&opt.limit, *argv)) {
 				explain1("limit");
+				return -1;
+			}
+		} else if (matches(*argv, "bursting") == 0) {
+			NEXT_ARG();
+			if (get_ticks(&opt.bursting, *argv)) {
+				explain1("bursting");
 				return -1;
 			}
 		} else if (matches(*argv, "latency") == 0 ||
@@ -824,6 +831,11 @@ static int netem_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 		PRINT_INT_OPT("packets", slot->max_packets);
 		PRINT_INT_OPT("bytes", slot->max_bytes);
 		close_json_object();
+	}
+
+	if (qopt.bursting) {
+		print_string(PRINT_FP, NULL, " bursting %s",
+				sprint_ticks(qopt.bursting, b1));
 	}
 
 	print_bool(PRINT_ANY, "ecn", ecn ? " ecn " : "", ecn);
